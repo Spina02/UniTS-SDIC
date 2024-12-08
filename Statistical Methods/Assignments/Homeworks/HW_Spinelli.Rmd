@@ -1,0 +1,133 @@
+---
+output:
+  html_document: default
+  pdf_document: default
+---
+
+### Ex 4.38
+
+For independent observations $y_1, ..., y_n$ having the geometric distribution $f(y) = (1- \pi)^{y-1}\pi$, with $y=1, 2, 3, ...$:
+
+a.  Find a sufficient statistic for $\pi$.
+
+b.  Derive the ML estimator of $\pi$.
+
+#### **Solution**
+
+a.  **Find a sufficient statistic for** $\boldsymbol{\pi}$
+
+    A statistic $T(y)$ is **sufficient** for $\theta$ if it contains all the information needed to compute any estimate of the parameter. To find a sufficient statistic for $\pi$ based on the geometric distribution $f(y)=(1-\pi)^{y-1}\pi$ for $y=1,2,3,...$ we proceed as follows:
+
+    1.  **Calculate the likelyhood**:
+
+        Given independent observations $y_1,y_2,…,y_n$ from the geometric distribution:
+
+        $$
+        f(y;\pi) = (1-\pi)^{-1}\pi, \quad y = 1,2,3,...
+        $$
+
+        The joint probability mass function (likelihood function) for all observations is the product of individual probabilities:$$
+          L(\pi) = \prod_{i = 1}^n \left[(1-\pi)^{y_i - 1}\pi \right]
+          $$
+
+        With some algebra we can separate the terms involving $\pi$:
+
+        $$
+          L(\pi;y) = \pi^n\prod_{i = 1}^n (1-\pi)^{y_i - 1} = \pi^n (1-\pi)^{\sum_{i = 1}^n (y_i - 1)} = \pi^n(1-p)^{T(y)-n}, \qquad \text{where }\ T(y) = \sum_{i = 1}^n y_i$$
+
+    2.  **Factorization Criterion:**
+
+        The **Neyman–Fisher factorization theorem** states that a statistic $T(y)$ is sufficient for parameter $\pi$ if the likelihood can be factorized into: $$
+          L(y;\pi) = h(y)\cdot g(T(y);\pi)
+          $$ where:
+
+        -   $g(T(y); \pi)$ depends on the data only through $T(y)$, and the parameter $\pi$,
+        -   $h(y)$ does not depend on $\pi$
+
+        From our likelihood function:
+
+        $$
+        L(\pi; y) = \underbrace{1}_{h(y)}\cdot \underbrace{\pi^n (1-\pi)^{T(y)-n}}_{g(T(y);\pi)}
+        $$
+
+        Here, $g(T(y), \pi)$ depends on the data only through $T(y) = \sum y_i$ and $\pi$, and $h(y) = 1$ does not depend on $\pi$.
+
+    By the factorization theorem, a sufficient statistic for $\pi$ is:
+
+    $$
+    \color{red}{\boxed{\color{black}{\ T(y) = \sum_{i = 1}^n y_y\ }}}
+    $$
+
+b.  **Derive the ML estimator of** $\boldsymbol \pi$
+
+    To derive the Maximum Likelihood Estimator (MLE) of $\pi$, we firstly have to calculate the Log-Likelihood function: $$
+      \ell (\pi) = \ln L(\pi; y) = n \ln \pi + (T(y)-n) \ln (1-\pi)
+      $$ Now we can find the maximum setting its derivative to zero: $$
+      \dfrac{d\ell}{d\pi} = \dfrac n\pi - \dfrac{T(y)-n}{1-\pi} = 0\\ \ \\
+      \Rightarrow\quad  n(1-\pi)-(T(y) - n)\pi = 0 \quad \Rightarrow \quad n - n\pi - T(y)\pi + n\pi = n - T(y)\pi = 0 \quad \Rightarrow \quad  T(y) \pi = n \\ \ \\  \Rightarrow \ \ \ \hat \pi = \dfrac n{T(y)}
+      $$ The maximum likelihood estimator of $\pi$ is:
+
+$$
+  \color{red}{\boxed{\ \color{black}{\hat \pi = \dfrac{n}{\sum_{i = 1}^n y_i}\ }}}
+  $$
+
+### Ex 6.12
+
+For the `UN` data file at the book’s website (see Exercise 1.24), construct a multiple regression model predicting `Internet` using all the other variables. Use the concept of multicollinearity to explain why adjusted $R^2$ is not dramatically greater than when `GDP` is the sole predictor. Compare the estimated `GDP` effect in the bivariate model and the multiple regression model and explain why it is so much weaker in the multiple regression model.
+
+#### **Solution**
+
+First, let's load the data into a variable and inspect its structure:
+
+```{r}
+url <- "https://stat4ds.rwth-aachen.de/data/UN.dat"
+UN <- read.table(url, header = TRUE)
+
+summary(UN)
+```
+
+Next, we fit a **multiple regression model** using `Internet` as the response variable and all other variables as predictors:
+
+```{r}
+fit1 <- lm(Internet ~ GDP + HDI + GII + Fertility + CO2 + Homicide + Prison, data = UN)
+
+summary(fit1)
+```
+
+For comparison, we fit a **bivariate regression model** using only `GDP` as the predictor for `Internet`:
+
+```{r}
+fit2 <- lm(Internet ~ GDP, data = UN)
+
+summary(fit2)
+```
+
+From the summaries, we observe the following:
+
+-   Adjusted $R^2$ for the **multiple regression model**: 0.8164
+-   Adjusted $R^2$ for the **bivariate regression model**: 0.7637
+
+Although the multiple regression model includes additional predictors, the improvement in adjusted $R^2$ is relatively small. This indicates that **`GDP` alone explains most of the variability in `Internet` usage**. To better understand this, we investigate the correlation structure between the predictors.
+
+We plot the correlation matrix to examine the relationships between the predictors and `Internet`:
+
+```{r}
+library(corrplot)
+M = cor(UN[-1], use = "complete.obs")
+corrplot(M, method = 'color')
+```
+
+The correlation plot reveals that:
+
+-   `GDP` is highly positively correlated with `Internet`, which explains its dominance in both models.
+-   Several other predictors, such as `HDI` and `Fertility`, are also strongly correlated with `Internet` and with GDP. This multicollinearity reduces the unique contribution of each variable in the multiple regression model.
+
+The significant decrease in the `GDP` coefficient from the bivariate model to the multiple regression model is due to multicollinearity between `GDP` and the other predictor variables (such as `HDI`, `GII`, `Fertility`, etc.). In practice, `GDP` shares a substantial portion of its variance with these variables, making it difficult to isolate the unique effect of `GDP` on `Internet` usage in the context of the multiple regression model. This is visible observing the `GDP` coefficients of the two models.
+
+```{r}
+cat("Coefficient of GDP in the bivariate regression model:\n\n")
+print(summary(fit2)$coefficients["GDP", ])
+
+cat("\nCoefficient of GDP in the multiple regression model:\n\n")
+print(summary(fit1)$coefficients["GDP", ])
+```
